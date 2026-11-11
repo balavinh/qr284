@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TienSon QR Auto</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 system-ui,Segoe UI,Roboto,sans-serif;background:#f1f5f9;color:#0f172a}
+header{background:#0f766e;color:#fff;padding:16px 24px}header h1{margin:0;font-size:20px}header p{margin:2px 0 0;opacity:.85;font-size:13px}
+main{max-width:1200px;margin:20px auto;padding:0 16px;display:grid;gap:18px}
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px #0001}
+.card>h2{margin:0 0 12px;font-size:16px}.card>h2 span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#0f766e;color:#fff;font-size:13px;margin-right:8px}
+#drop{border:2px dashed #94a3b8;border-radius:10px;padding:26px;text-align:center;cursor:pointer;color:#475569;display:block}
+#drop.on{border-color:#0f766e;background:#f0fdfa}
+.fc{border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-top:10px}.fh{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.fh span{color:#64748b}.fh button{margin-left:auto}
+.mp{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:8px}
+label{display:block;font-size:12px;color:#475569}select,input[type=number],input[type=text]{width:100%;padding:5px 6px;border:1px solid #cbd5e1;border-radius:6px;font:inherit;background:#fff}
+input[type=color]{width:100%;height:28px;padding:0;border:1px solid #cbd5e1;border-radius:6px}
+button{padding:7px 14px;border:0;border-radius:8px;background:#0f766e;color:#fff;font:inherit;cursor:pointer}button.s{background:#e2e8f0;color:#0f172a}button:disabled{opacity:.5}
+.g2{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:18px}@media(max-width:800px){.g2{grid-template-columns:1fr}}
+.row4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0 12px}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:3px;text-align:left}td input[type=number]{width:62px}
+#pvw{background:#e2e8f0;border-radius:8px;padding:8px;text-align:center}#pv{max-width:100%;max-height:640px;touch-action:none;background:#fff;box-shadow:0 0 0 1px #0002}
+.bar{height:14px;background:#e2e8f0;border-radius:7px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:#0f766e;transition:width .1s}
+.res{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #e2e8f0}.res span{color:#64748b}.res a{margin-left:auto;background:#0f766e;color:#fff;padding:6px 12px;border-radius:8px;text-decoration:none}
+footer{max-width:1200px;margin:8px auto 28px;padding:0 16px;font-size:12px;color:#475569}footer h3{margin:12px 0 4px;font-size:13px;color:#0f172a}footer table td,footer table th{padding:3px 8px 3px 0;vertical-align:top;border-bottom:1px solid #e2e8f0}footer p{margin:2px 0}
+.err{color:#b91c1c;font-size:12px;white-space:pre-wrap}.hint{font-size:12px;color:#64748b}
+</style></head><body>
+<header><h1>TienSon QR Auto</h1><p>Chạy hoàn toàn offline trên trình duyệt – không gửi dữ liệu ra ngoài.</p></header>
+<main>
+<section class="card"><h2><span>1</span>Tải lên danh sách ngân hàng</h2>
+<label id="drop">Kéo thả nhiều file <b>.xlsx / .csv</b> vào đây hoặc bấm để chọn<input id="fin" type="file" multiple accept=".xlsx,.csv,.xls,.txt" hidden></label>
+<div id="msg" class="err"></div><div id="files"></div>
+<div class="mp" style="margin-top:12px"><label>Loại dịch vụ (Tag 38 – sub-tag 02)<select id="svc"><option value="QRIBFTTA">QRIBFTTA – chuyển đến số tài khoản</option><option value="QRIBFTTC">QRIBFTTC – chuyển đến số thẻ</option></select></label></div>
+<p class="hint">Cột ngân hàng nhận mã BIN 6 số hoặc tên viết tắt (VCB, ICB, TCB, MB, BIDV, VPB, TPB, ACB, Agribank…). Có Số tiền → QR động (Tag 01 = 12), không có → QR tĩnh (11).</p></section>
+
+<section class="card"><h2><span>2</span>Tùy chỉnh khung ảnh &amp; xem trước</h2>
+<div class="g2"><div id="cfg">
+<label>Ảnh khung mẫu (PNG/JPG) – bỏ trống để dùng nền trắng mặc định<input id="tpl" type="file" accept="image/png,image/jpeg"></label>
+<button class="s" id="tplx" style="margin:6px 0">Bỏ khung mẫu</button>
+<div class="mp" style="margin:6px 0"><label>Mẫu đã lưu (ảnh khung + vị trí + font + văn bản)<select id="pset"><option value="">— chọn mẫu đã lưu —</option></select></label><label>&nbsp;<span><button id="psave" type="button">💾 Lưu mẫu</button> <button class="s" id="pdel" type="button">Xóa</button></span></label></div>
+<div id="idbmsg" class="err"></div><p class="hint" style="margin:2px 0 8px">Cấu hình và ảnh khung lần dùng gần nhất được tự lưu trong trình duyệt và khôi phục khi mở lại.</p>
+<label style="margin-bottom:8px">Click vào ảnh xem trước để đặt vị trí cho<select id="target"><option value="qr">Mã QR</option><option value="0">Tên chủ TK</option><option value="1">Số tài khoản</option><option value="2">Số tiền</option><option value="3">Nội dung CK</option></select></label>
+<b>Vùng dán mã QR</b> <span class="hint">(kéo thả QR / chữ trực tiếp trên ảnh xem trước)</span>
+<div class="row4"><label>X<input type="number" id="bx" value="60"></label><label>Y<input type="number" id="by" value="40"></label><label>Width<input type="number" id="bw" value="520"></label><label>Height<input type="number" id="bh" value="520"></label></div>
+<label style="margin-bottom:10px"><input type="checkbox" id="qbg" checked> Vẽ nền trắng + vùng đệm quanh QR</label>
+<b>Văn bản in lên khung</b>
+<div class="row4" style="grid-template-columns:2fr 1fr 1fr"><label>Font<select id="ff"><option>Arial</option><option>Segoe UI</option><option>Tahoma</option><option>Times New Roman</option><option>Courier New</option></select></label><label>Căn lề<select id="al"><option value="center">Giữa</option><option value="left">Trái</option><option value="right">Phải</option></select></label><label>&nbsp;<span><input type="checkbox" id="bold" checked> Đậm</span></label></div>
+<table id="tt"><tr><th></th><th>Nội dung</th><th>X</th><th>Y</th><th>Cỡ</th><th>Màu</th></tr></table>
+<div style="margin-top:12px;display:flex;gap:8px"><button id="rnd">🎲 Xem trước bản ghi ngẫu nhiên</button></div>
+</div><div id="pvw"><canvas id="pv" width="640" height="800"></canvas><div id="pverr" class="err"></div><div id="pvi" class="hint"></div></div></div></section>
+
+<section class="card"><h2><span>3</span>Tiến trình &amp; tải kết quả</h2>
+<div class="mp" style="margin-bottom:12px"><label>Cú pháp đặt tên file ảnh (không gồm .png)<input type="text" id="nm" value="{ten|stk}"></label>
+<label>Mẫu cú pháp nhanh<select id="nmq"><option value="">— chọn —</option><option value="{stk}">Theo số tài khoản: {stk}</option><option value="{ten}">Theo tên tài khoản: {ten}</option><option value="{noidung}">Theo nội dung CK: {noidung}</option><option value="{ten|stk}">Tên, nếu trống thì STK: {ten|stk}</option><option value="{stk}_{ten}">STK_Tên: {stk}_{ten}</option><option value="{stt}_{stk}">Số thứ tự_STK: {stt}_{stk}</option></select></label>
+<label>&nbsp;<span><input type="checkbox" id="nmd"> Bỏ dấu tiếng Việt trong tên file</span></label></div>
+<p class="hint" style="margin:-6px 0 12px">Biến: <code>{stk}</code> <code>{ten}</code> <code>{noidung}</code> <code>{sotien}</code> <code>{bank}</code> <code>{bin}</code> <code>{stt}</code> <code>{dong}</code>. Dùng <code>|</code> để dự phòng, ví dụ <code>{ten|stk}</code> = lấy tên, nếu trống thì lấy STK. Tên trùng sẽ tự thêm _2, _3…</p>
+<label style="display:inline-block;width:110px;margin-right:8px">Số luồng (Worker)<input type="number" id="nw" min="1" max="16"></label><button id="go">▶ Tạo mã QR hàng loạt</button> <button class="s" id="dlall" disabled>⬇ Tải tất cả ZIP</button>
+<div class="bar" style="margin:12px 0 4px"><i id="pb"></i></div><div id="pt" class="hint">Chưa chạy.</div><div id="res"></div></section>
+</main>
+<footer>
+<p><b>TienSon QR Auto</b> · Tác giả: <b>nt.bang - CT284</b></p>
+<h3>Thư viện &amp; chuẩn kỹ thuật sử dụng</h3>
+<p>Ứng dụng không nhúng thư viện bên thứ ba dạng mã nguồn đóng gói sẵn; toàn bộ mã được viết trực tiếp trong file này, dựa trên các chuẩn và thuật toán công khai sau:</p>
+<table><tr><th>Thành phần</th><th>Chủ sở hữu / nguồn</th><th>Giấy phép / điều khoản</th></tr>
+<tr><td>Bộ sinh mã QR (cài đặt lại theo cấu trúc thuật toán của “QR Code generator library”)</td><td>Project Nayuki (nayuki.io)</td><td>MIT License</td></tr>
+<tr><td>QR Code (ISO/IEC 18004)</td><td>“QR Code” là nhãn hiệu đã đăng ký của DENSO WAVE INCORPORATED</td><td>Đặc tả mở, không thu phí bản quyền sử dụng</td></tr>
+<tr><td>EMVCo QR Code Specification (TLV, CRC-16/CCITT-FALSE)</td><td>EMVCo, LLC</td><td>Tài liệu đặc tả của EMVCo</td></tr>
+<tr><td>VietQR / chuẩn QRIBFT NAPAS 247</td><td>Công ty Cổ phần Thanh toán Quốc gia Việt Nam (NAPAS)</td><td>Tài liệu đặc tả của NAPAS</td></tr>
+<tr><td>Định dạng ZIP (APPNOTE) &amp; Office Open XML (.xlsx, ECMA-376 / ISO/IEC 29500)</td><td>PKWARE, Inc. · Ecma International / ISO</td><td>Đặc tả công khai</td></tr>
+<tr><td>Web API: Web Worker, OffscreenCanvas, IndexedDB, DecompressionStream, Canvas 2D</td><td>WHATWG / W3C, do trình duyệt cung cấp</td><td>Tiêu chuẩn mở (W3C Software and Document License / WHATWG)</td></tr></table>
+<p style="margin-top:8px">Tên ngân hàng, mã BIN và nhãn hiệu liên quan thuộc về các tổ chức sở hữu tương ứng.</p>
+</footer>
+<script id="main">
+"use strict";
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toUpperCase().replace(/[^A-Z0-9]/g,'');
+/* ---------- Bảng ngân hàng: tên viết tắt -> BIN ---------- */
+const BANKS={VCB:970436,VIETCOMBANK:970436,ICB:970415,CTG:970415,VIETINBANK:970415,TCB:970407,TECHCOMBANK:970407,MB:970422,MBBANK:970422,BIDV:970418,VPB:970432,VPBANK:970432,TPB:970423,TPBANK:970423,ACB:970416,AGRIBANK:970405,VBA:970405,STB:970403,SACOMBANK:970403,VIB:970441,HDB:970437,HDBANK:970437,SHB:970443,MSB:970426,OCB:970448,SEAB:970440,SEABANK:970440,EIB:970431,EXIMBANK:970431,LPB:970449,LPBANK:970449,LIENVIETPOSTBANK:970449,ABB:970425,ABBANK:970425,VAB:970427,VIETABANK:970427,NAB:970428,NAMABANK:970428,BAB:970409,BACABANK:970409,PGB:970430,PGBANK:970430,SCB:970429,SHBVN:970424,SHINHAN:970424,KLB:970452,KIENLONGBANK:970452,BVB:970438,BAOVIETBANK:970438,SGB:970400,SAIGONBANK:970400,VRB:970421,COOPBANK:970446,CBB:970444,GPB:970408,NCB:970419,DAB:970406,DONGABANK:970406,OCEANBANK:970414,WOORI:970457,PBVN:970439,PUBLICBANK:970439,UOB:970458,HSBC:458761,CIMB:422589,TIMO:963388,CAKE:546034,UBANK:546035,VIETTELMONEY:971005,VNPTMONEY:971011,SCVN:970410};
+function resolveBin(v){const s=String(v==null?'':v).trim().replace(/\.0+$/,'');if(/^\d{6}$/.test(s))return s;const b=BANKS[norm(s)];return b?String(b):null}
+/* ---------- VietQR / EMVCo TLV ---------- */
+const tlv=(t,v)=>t+String(v.length).padStart(2,'0')+v;
+function crc16(s){let c=0xFFFF;for(let i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(let k=0;k<8;k++)c=(c&0x8000)?((c<<1)^0x1021):(c<<1);c&=0xFFFF}return c.toString(16).toUpperCase().padStart(4,'0')}
+function buildVietQR({bin,acc,amount,msg,service}){
+ const t38=tlv('00','A000000727')+tlv('01',tlv('00',bin)+tlv('01',acc))+tlv('02',service);
+ const p=tlv('00','01')+tlv('01',amount?'12':'11')+tlv('38',t38)+tlv('53','704')+(amount?tlv('54',String(amount)):'')+tlv('58','VN')+(msg?tlv('62',tlv('08',msg)):'')+'6304';
+ return p+crc16(p)}
+/* ---------- QR Code encoder (byte mode, ECC level M, v1-40) ---------- */
+const QR=(()=>{
+const ECC=[-1,10,16,26,18,24,16,18,22,22,26,30,22,22,24,24,28,28,26,26,26,26,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28];
+const NB=[-1,1,1,1,2,2,4,4,4,5,5,5,8,9,9,10,10,11,13,14,16,17,17,18,20,21,23,25,26,28,29,31,33,35,37,38,40,43,45,47,49];
+const bit=(x,i)=>((x>>>i)&1)!==0;
+function raw(v){let r=(16*v+128)*v+64;if(v>=2){const a=Math.floor(v/7)+2;r-=(25*a-10)*a-55;if(v>=7)r-=36}return r}
+const dcw=v=>Math.floor(raw(v)/8)-ECC[v]*NB[v];
+function mul(x,y){let z=0;for(let i=7;i>=0;i--){z=(z<<1)^((z>>>7)*0x11D);z^=((y>>>i)&1)*x}return z}
+function rsDiv(d){const r=new Array(d).fill(0);r[d-1]=1;let root=1;for(let i=0;i<d;i++){for(let j=0;j<d;j++){r[j]=mul(r[j],root);if(j+1<d)r[j]^=r[j+1]}root=mul(root,2)}return r}
+function rsRem(data,div){const r=div.map(()=>0);for(const b of data){const f=b^r.shift();r.push(0);div.forEach((c,i)=>r[i]^=mul(c,f))}return r}
+function encode(text){
+ const bytes=[...new TextEncoder().encode(text)];let v;
+ for(v=1;v<=40;v++)if(4+(v<10?8:16)+bytes.length*8<=dcw(v)*8)break;
+ if(v>40)throw Error('Dữ liệu QR quá dài');
+ const bits=[],put=(val,len)=>{for(let i=len-1;i>=0;i--)bits.push((val>>>i)&1)};
+ put(4,4);put(bytes.length,v<10?8:16);bytes.forEach(b=>put(b,8));
+ const cap=dcw(v)*8;put(0,Math.min(4,cap-bits.length));put(0,(8-bits.length%8)%8);
+ for(let p=0xEC;bits.length<cap;p^=0xEC^0x11)put(p,8);
+ const data=[];for(let i=0;i<bits.length;i+=8){let b=0;for(let j=0;j<8;j++)b=b<<1|bits[i+j];data.push(b)}
+ const nb=NB[v],el=ECC[v],rc=Math.floor(raw(v)/8),ns=nb-rc%nb,sl=Math.floor(rc/nb),div=rsDiv(el),blocks=[];
+ for(let i=0,k=0;i<nb;i++){const d=data.slice(k,k+sl-el+(i<ns?0:1));k+=d.length;const e=rsRem(d,div);if(i<ns)d.push(0);blocks.push(d.concat(e))}
+ const cw=[];for(let i=0;i<blocks[0].length;i++)blocks.forEach((b,j)=>{if(i!==sl-el||j>=ns)cw.push(b[i])});
+ const size=v*4+17,m=Array.from({length:size},()=>Array(size).fill(false)),f=Array.from({length:size},()=>Array(size).fill(false));
+ const sf=(x,y,b)=>{m[y][x]=b;f[y][x]=true};
+ for(let i=0;i<size;i++){sf(6,i,i%2===0);sf(i,6,i%2===0)}
+ const finder=(cx,cy)=>{for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){const d=Math.max(Math.abs(dx),Math.abs(dy)),x=cx+dx,y=cy+dy;if(x>=0&&x<size&&y>=0&&y<size)sf(x,y,d!==2&&d!==4)}};
+ finder(3,3);finder(size-4,3);finder(3,size-4);
+ if(v>1){const na=Math.floor(v/7)+2,step=v===32?26:Math.ceil((v*4+4)/(na*2-2))*2,ap=[6];for(let p=size-7;ap.length<na;p-=step)ap.splice(1,0,p);
+  for(let i=0;i<na;i++)for(let j=0;j<na;j++){if((i===0&&j===0)||(i===0&&j===na-1)||(i===na-1&&j===0))continue;
+   for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)sf(ap[i]+dx,ap[j]+dy,Math.max(Math.abs(dx),Math.abs(dy))!==1)}}
+ const fmt=mask=>{let r=mask;for(let i=0;i<10;i++)r=(r<<1)^((r>>>9)*0x537);const b=((mask<<10)|r)^0x5412;
+  for(let i=0;i<=5;i++)sf(8,i,bit(b,i));sf(8,7,bit(b,6));sf(8,8,bit(b,7));sf(7,8,bit(b,8));for(let i=9;i<15;i++)sf(14-i,8,bit(b,i));
+  for(let i=0;i<8;i++)sf(size-1-i,8,bit(b,i));for(let i=8;i<15;i++)sf(8,size-15+i,bit(b,i));sf(8,size-8,true)};
+ fmt(0);
+ if(v>=7){let r=v;for(let i=0;i<12;i++)r=(r<<1)^((r>>>11)*0x1F25);const b=(v<<12)|r;for(let i=0;i<18;i++){const a=size-11+i%3,c=Math.floor(i/3);sf(a,c,bit(b,i));sf(c,a,bit(b,i))}}
+ for(let i=0,right=size-1;right>=1;right-=2){if(right===6)right=5;
+  for(let vert=0;vert<size;vert++)for(let j=0;j<2;j++){const x=right-j,up=((right+1)&2)===0,y=up?size-1-vert:vert;
+   if(!f[y][x]&&i<cw.length*8){m[y][x]=bit(cw[i>>>3],7-(i&7));i++}}}
+ const cond=[(x,y)=>(x+y)%2===0,(x,y)=>y%2===0,(x,y)=>x%3===0,(x,y)=>(x+y)%3===0,(x,y)=>(Math.floor(x/3)+Math.floor(y/2))%2===0,(x,y)=>x*y%2+x*y%3===0,(x,y)=>(x*y%2+x*y%3)%2===0,(x,y)=>((x+y)%2+x*y%3)%2===0];
+ const apply=k=>{for(let y=0;y<size;y++)for(let x=0;x<size;x++)if(!f[y][x]&&cond[k](x,y))m[y][x]=!m[y][x]};
+ const pen=()=>{let p=0,dark=0;
+  for(let a=0;a<2;a++)for(let y=0;y<size;y++){let run=1;for(let x=1;x<size;x++){const c=a?m[x][y]:m[y][x],q=a?m[x-1][y]:m[y][x-1];if(c===q){run++;if(run===5)p+=3;else if(run>5)p++}else run=1}}
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){if(m[y][x])dark++;if(x<size-1&&y<size-1&&m[y][x]===m[y][x+1]&&m[y][x]===m[y+1][x]&&m[y][x]===m[y+1][x+1])p+=3}
+  const t=size*size;return p+(Math.ceil(Math.abs(dark*20-t*10)/t)-1)*10};
+ let best=0,bp=1e9;for(let k=0;k<8;k++){apply(k);fmt(k);const p=pen();if(p<bp){bp=p;best=k}apply(k)}
+ apply(best);fmt(best);return{size,m,version:v}}
+return{encode}})();
+/* ---------- ZIP writer (STORE) ---------- */
+const CT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=-1;for(let i=0;i<u.length;i++)c=CT[(c^u[i])&255]^(c>>>8);return(~c)>>>0};
+function makeZip(entries){const te=new TextEncoder(),parts=[],cd=[],d=new Date();let off=0;
+ const time=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),date=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+ for(const e of entries){const nm=te.encode(e.name),crc=crc32(e.data),sz=e.data.length;
+  const l=new DataView(new ArrayBuffer(30));l.setUint32(0,0x04034b50,true);l.setUint16(4,20,true);l.setUint16(6,0x0800,true);l.setUint16(10,time,true);l.setUint16(12,date,true);l.setUint32(14,crc,true);l.setUint32(18,sz,true);l.setUint32(22,sz,true);l.setUint16(26,nm.length,true);
+  parts.push(l.buffer,nm,e.data);
+  const h=new DataView(new ArrayBuffer(46));h.setUint32(0,0x02014b50,true);h.setUint16(4,20,true);h.setUint16(6,20,true);h.setUint16(8,0x0800,true);h.setUint16(12,time,true);h.setUint16(14,date,true);h.setUint32(16,crc,true);h.setUint32(20,sz,true);h.setUint32(24,sz,true);h.setUint16(28,nm.length,true);h.setUint32(42,off,true);
+  cd.push(h.buffer,nm);off+=30+nm.length+sz}
+ let cs=0;cd.forEach(p=>cs+=p.byteLength);const e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,entries.length,true);e.setUint16(10,entries.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+ return new Blob([...parts,...cd,e.buffer],{type:'application/zip'})}
+/* ---------- Đọc XLSX (ZIP + XML, giải nén bằng DecompressionStream) & CSV ---------- */
+async function inflateRaw(u8){const ds=new DecompressionStream('deflate-raw'),w=ds.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(ds.readable).arrayBuffer())}
+function unzip(buf){const u=new Uint8Array(buf),dv=new DataView(buf),td=new TextDecoder();let e=u.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;if(e<0)throw Error('File không phải XLSX hợp lệ');
+ const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const files={};
+ for(let i=0;i<n;i++){const m=dv.getUint16(p+10,true),cs=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true),name=td.decode(u.subarray(p+46,p+46+nl));p+=46+nl+xl+cl;
+  const st=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true),raw=u.subarray(st,st+cs);files[name]=()=>m===0?Promise.resolve(raw):inflateRaw(raw)}
+ return files}
+const colIdx=r=>{let n=0;for(const ch of r.replace(/\d/g,''))n=n*26+ch.charCodeAt(0)-64;return n-1};
+const colName=i=>{let s='';for(i++;i>0;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s};
+async function readXlsx(buf){const z=unzip(buf),td=new TextDecoder(),txt=async n=>z[n]?td.decode(await z[n]()):null,X=s=>new DOMParser().parseFromString(s,'application/xml');
+ let shared=[];const ss=await txt('xl/sharedStrings.xml');if(ss)shared=[...X(ss).getElementsByTagName('si')].map(si=>[...si.getElementsByTagName('t')].map(t=>t.textContent).join(''));
+ let path='xl/worksheets/sheet1.xml';const wb=await txt('xl/workbook.xml'),rl=await txt('xl/_rels/workbook.xml.rels');
+ if(wb&&rl){const sh=X(wb).getElementsByTagName('sheet')[0],rid=sh&&sh.getAttribute('r:id'),rel=[...X(rl).getElementsByTagName('Relationship')].find(r=>r.getAttribute('Id')===rid);
+  if(rel){const t=rel.getAttribute('Target');path=t[0]==='/'?t.slice(1):'xl/'+t.replace(/^\.\//,'')}}
+ if(!z[path])path=Object.keys(z).find(k=>k.startsWith('xl/worksheets/')&&k.endsWith('.xml'));
+ if(!path)throw Error('Không tìm thấy sheet');
+ const doc=X(await txt(path)),rows=[];let ri=0;
+ for(const row of doc.getElementsByTagName('row')){const rn=row.getAttribute('r')?+row.getAttribute('r')-1:ri;while(rows.length<rn)rows.push([]);const arr=[];
+  for(const c of row.getElementsByTagName('c')){const t=c.getAttribute('t'),ref=c.getAttribute('r'),ci=ref?colIdx(ref):arr.length,ve=c.getElementsByTagName('v')[0];let val='';
+   if(t==='inlineStr')val=[...c.getElementsByTagName('t')].map(x=>x.textContent).join('');
+   else if(ve){val=ve.textContent;if(t==='s')val=shared[+val]||'';else if(!t||t==='n'){if(/e/i.test(val))val=Number(val).toFixed(0)}}
+   while(arr.length<ci)arr.push('');arr[ci]=val}
+  rows[rn]=arr;ri=rn+1}
+ return rows.map(r=>r||[]).filter(r=>r.some(x=>String(x).trim()!==''))}
+function parseCSV(t){t=t.replace(/^\uFEFF/,'');const first=t.split(/\r?\n/)[0]||'',d=[',',';','\t'].map(c=>[c,first.split(c).length]).sort((a,b)=>b[1]-a[1])[0][0],rows=[];let r=[],c='',q=false;
+ for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===d){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);rows.push(r);r=[];c=''}else c+=ch}
+ if(c!==''||r.length){r.push(c);rows.push(r)}return rows.filter(r=>r.some(x=>x.trim()!==''))}
+/* ---------- Nhận diện cột & danh sách file ---------- */
+const FIELDS=[['bank','Mã NH / BIN *'],['acc','Số tài khoản *'],['amount','Số tiền'],['msg','Nội dung CK'],['name','Tên người thụ hưởng / tên file ảnh']];
+const PAT={bank:/NGANHANG|BANK|^BIN|BIN$|MANH$|^MANH/,name:/^TEN|TENCHU|NGUOI|THUHUONG|OWNER|HOLDER|FILENAME|NAME/,acc:/STK|SOTAIKHOAN|TAIKHOAN|ACCOUNT|ACC|SOTK/,amount:/SOTIEN|AMOUNT|MONEY|TIEN/,msg:/NOIDUNG|CONTENT|MEMO|DESCRIPTION|DIENGIAI|LOINHAN|MESSAGE|NOTE/};
+function detect(f){const map={bank:-1,acc:-1,amount:-1,msg:-1,name:-1};if(f.hasHeader){const used=new Set();
+  (f.rows[0]||[]).forEach((h,i)=>{const n=norm(h);for(const k of['bank','name','acc','amount','msg'])if(map[k]<0&&PAT[k].test(n)){map[k]=i;break}})}
+ return map}
+let files=[];
+function maxCols(f){return Math.max(...f.rows.slice(0,50).map(r=>r.length),1)}
+function renderFiles(){const box=$('#files');box.innerHTML='';files.forEach((f,fi)=>{const nc=maxCols(f),d=document.createElement('div');d.className='fc';
+ const opts=sel=>'<option value="-1">(không dùng)</option>'+Array.from({length:nc},(_,i)=>`<option value="${i}" ${i===sel?'selected':''}>${f.hasHeader&&f.rows[0][i]!==undefined&&String(f.rows[0][i]).trim()?esc(f.rows[0][i]):'Cột '+colName(i)}</option>`).join('');
+ d.innerHTML=`<div class="fh"><b>${esc(f.name)}</b><span>${f.rows.length-(f.hasHeader?1:0)} dòng</span><label><input type="checkbox" data-h="${fi}" ${f.hasHeader?'checked':''}> Dòng đầu là tiêu đề</label><button class="s" data-x="${fi}">✕ Bỏ</button></div><div class="mp">${FIELDS.map(([k,l])=>`<label>${l}<select data-f="${fi}" data-k="${k}">${opts(f.map[k])}</select></label>`).join('')}</div>`;box.append(d)});pv()}
+$('#files').addEventListener('change',e=>{const t=e.target;if(t.dataset.h!==undefined){const f=files[+t.dataset.h];f.hasHeader=t.checked;f.map=detect(f);renderFiles()}else if(t.dataset.k){files[+t.dataset.f].map[t.dataset.k]=+t.value;pv()}});
+$('#files').addEventListener('click',e=>{if(e.target.dataset.x!==undefined){files.splice(+e.target.dataset.x,1);renderFiles()}});
+async function addFiles(list){$('#msg').textContent='';for(const file of list){try{const buf=await file.arrayBuffer(),u=new Uint8Array(buf);let rows;
+  if(u[0]===0x50&&u[1]===0x4B)rows=await readXlsx(buf);
+  else if(/\.xls$/i.test(file.name))throw Error(`"${file.name}": định dạng .xls (Excel 97-2003) chưa được hỗ trợ offline. Hãy mở bằng Excel → Lưu thành .xlsx hoặc .csv.`);
+  else rows=parseCSV(new TextDecoder('utf-8').decode(buf));
+  if(!rows.length)throw Error(`"${file.name}": file trống`);
+  const f={name:file.name,rows,hasHeader:true,map:null};f.map=detect(f);if(f.map.bank<0&&f.map.acc<0)f.hasHeader=false;files.push(f)}
+ catch(err){$('#msg').textContent+=err.message+'\n'}}renderFiles()}
+$('#fin').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value=''});
+const dz=$('#drop');['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on')}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on')}));dz.addEventListener('drop',e=>addFiles([...e.dataTransfer.files]));
+function getRecords(f){const m=f.map,g=(r,k)=>m[k]>=0&&r[m[k]]!==undefined?String(r[m[k]]).trim():'';
+ return f.rows.slice(f.hasHeader?1:0).map((r,i)=>({row:i+1+(f.hasHeader?1:0),bank:g(r,'bank'),acc:g(r,'acc'),amount:g(r,'amount'),msg:g(r,'msg'),name:g(r,'name')})).filter(r=>r.bank||r.acc)}
+/* ---------- Tạo QR từ 1 bản ghi ---------- */
+function parseAmount(s){s=String(s||'').trim();if(!s)return 0;if(/^\d+\.\d{1,2}$/.test(s))return Math.round(Number(s));return parseInt(s.replace(/\D/g,''),10)||0}
+const clean=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').replace(/[^\x20-\x7E]/g,'').trim().slice(0,50);
+function makeQR(r,svc){const bin=resolveBin(r.bank);if(!bin)throw Error(`Không nhận diện được ngân hàng "${r.bank}"`);
+ const acc=r.acc.replace(/\s/g,'').replace(/\.0+$/,'');if(!/^[0-9A-Za-z]{1,19}$/.test(acc))throw Error(`Số tài khoản không hợp lệ "${r.acc}"`);
+ const amount=parseAmount(r.amount),payload=buildVietQR({bin,acc,amount,msg:clean(r.msg),service:svc});return{qr:QR.encode(payload),payload,amount,acc}}
+/* ---------- Khung ảnh & vẽ ---------- */
+let tpl=null,tplBlob=null,cur=null,hits=[],sel='qr',drag=null,raf=0,st=0;
+const TX=[['name','Tên chủ TK',600,34,'#111111',1],['acc','Số tài khoản',650,30,'#111111',1],['amount','Số tiền',700,30,'#c2410c',1],['msg','Nội dung CK',750,24,'#334155',0]];
+$('#tt').insertAdjacentHTML('beforeend',TX.map(([k,l,y,s,c,on],i)=>`<tr><td><input type="checkbox" id="t${i}_on" ${on?'checked':''}></td><td>${l}</td><td><input type="number" id="t${i}_x" value="320"></td><td><input type="number" id="t${i}_y" value="${y}"></td><td><input type="number" id="t${i}_s" value="${s}"></td><td><input type="color" id="t${i}_c" value="${c}"></td></tr>`).join(''));
+const g=id=>+$('#'+id).value||0;
+function readCfg(){return{bx:g('bx'),by:g('by'),bw:g('bw'),bh:g('bh'),quiet:$('#qbg').checked,ff:$('#ff').value,al:$('#al').value,bold:$('#bold').checked,svc:$('#svc').value,nm:$('#nm').value,tx:TX.map(([k],i)=>({k,on:$('#t'+i+'_on').checked,x:g('t'+i+'_x'),y:g('t'+i+'_y'),s:g('t'+i+'_s'),c:$('#t'+i+'_c').value}))}}
+function applyCfg(c){['bx','by','bw','bh','ff','al','svc','nm'].forEach(k=>{if(c[k]!==undefined)$('#'+k).value=c[k]});$('#qbg').checked=!!c.quiet;$('#bold').checked=!!c.bold;(c.tx||[]).forEach((t,i)=>{if(!TX[i])return;$('#t'+i+'_on').checked=!!t.on;$('#t'+i+'_x').value=t.x;$('#t'+i+'_y').value=t.y;$('#t'+i+'_s').value=t.s;$('#t'+i+'_c').value=t.c})}
+/* ---------- Vẽ khung ---------- */
+function drawCore(cv,tpl,cfg,r){const W=tpl?(tpl.naturalWidth||tpl.width):640,H=tpl?(tpl.naturalHeight||tpl.height):800;cv.width=W;cv.height=H;const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,W,H);if(tpl)c.drawImage(tpl,0,0);
+ const {qr,acc,amount}=makeQR(r,cfg.svc),{bx,by,bw,bh}=cfg,s=Math.min(bw,bh),ox=bx+(bw-s)/2,oy=by+(bh-s)/2,quiet=cfg.quiet?2:0,cell=s/(qr.size+2*quiet),hits=[{id:'qr',x:bx,y:by,w:bw,h:bh}];
+ if(quiet){c.fillStyle='#fff';c.fillRect(ox,oy,s,s)}c.fillStyle='#000';
+ for(let y=0;y<qr.size;y++)for(let x=0;x<qr.size;x++)if(qr.m[y][x])c.fillRect(Math.floor(ox+(x+quiet)*cell),Math.floor(oy+(y+quiet)*cell),Math.ceil(cell),Math.ceil(cell));
+ c.textAlign=cfg.al;c.textBaseline='top';
+ const vals={name:r.name,acc:'STK: '+acc,amount:amount?'Số tiền: '+amount.toLocaleString('vi-VN')+' VND':'',msg:r.msg};
+ cfg.tx.forEach((t,i)=>{if(!t.on||!vals[t.k])return;c.font=`${cfg.bold?'bold ':''}${t.s}px "${cfg.ff}",sans-serif`;c.fillStyle=t.c;c.fillText(vals[t.k],t.x,t.y);const w=c.measureText(vals[t.k]).width;hits.push({id:i,x:cfg.al==='center'?t.x-w/2:cfg.al==='right'?t.x-w:t.x,y:t.y,w,h:t.s*1.2})});
+ return hits}
+/*END*/
+const SAMPLE={row:0,bank:'VCB',acc:'0123456789',amount:'150000',msg:'Thanh toan don hang 001',name:'NGUYEN VAN A'};cur=SAMPLE;
+function pickRec(){const all=files.flatMap(getRecords);cur=all.length?all[Math.floor(Math.random()*all.length)]:SAMPLE;pv()}
+function pv(){$('#pverr').textContent='';const cv=$('#pv');try{hits=drawCore(cv,tpl,readCfg(),cur);const c=cv.getContext('2d');c.save();c.lineWidth=Math.max(2,cv.width/400);
+ hits.forEach(h=>{const on=String(h.id)===sel;c.strokeStyle=on?'#0f766e':'#0f766e88';c.setLineDash(on?[]:[8,6]);c.strokeRect(h.x,h.y,h.w,h.h)});c.restore();
+ $('#pvi').textContent=(cur===SAMPLE?'Dữ liệu mẫu · ':`Dòng ${cur.row} · `)+cv.width+'×'+cv.height+'px · kéo thả khung nét đứt để di chuyển'}catch(e){hits=[];$('#pverr').textContent='⚠ '+e.message}}
+const sched=()=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;pv()})};
+/* kéo thả / click trên ảnh xem trước */
+const pcv=$('#pv'),pos=e=>{const r=pcv.getBoundingClientRect();return[(e.clientX-r.left)*pcv.width/r.width,(e.clientY-r.top)*pcv.height/r.height]};
+const hitAt=(x,y)=>[...hits].reverse().find(h=>x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h);
+const getPos=id=>id==='qr'?[g('bx'),g('by')]:[g('t'+id+'_x'),g('t'+id+'_y')];
+function setPos(id,x,y){x=Math.round(x);y=Math.round(y);if(id==='qr'){$('#bx').value=x;$('#by').value=y}else{$('#t'+id+'_x').value=x;$('#t'+id+'_y').value=y}}
+pcv.addEventListener('pointerdown',e=>{const[x,y]=pos(e),h=hitAt(x,y);
+ if(h){sel=String(h.id);$('#target').value=sel;const[ax,ay]=getPos(sel);drag={dx:x-ax,dy:y-ay};pcv.setPointerCapture(e.pointerId)}
+ else if(sel==='qr')setPos('qr',x-g('bw')/2,y-g('bh')/2);else setPos(sel,x,y-g('t'+sel+'_s')/2);
+ pv();save()});
+pcv.addEventListener('pointermove',e=>{const[x,y]=pos(e);if(drag){setPos(sel,x-drag.dx,y-drag.dy);sched()}else pcv.style.cursor=hitAt(x,y)?'move':'crosshair'});
+['pointerup','pointercancel'].forEach(ev=>pcv.addEventListener(ev,()=>{if(drag){drag=null;save()}}));
+$('#target').addEventListener('change',()=>{sel=$('#target').value;pv()});
+/* ---------- Lưu trữ cục bộ (IndexedDB): ảnh khung + cấu hình ---------- */
+const idb=new Promise((res,rej)=>{try{const q=indexedDB.open('vietqr-batch',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}catch(e){rej(e)}});
+const txn=async(m,fn)=>{const db=await idb;return new Promise((res,rej)=>{const t=db.transaction('kv',m),r=fn(t.objectStore('kv'));t.oncomplete=()=>res(r.result);t.onerror=()=>rej(t.error)})};
+const kvGet=k=>txn('readonly',s=>s.get(k)),kvSet=(k,v)=>txn('readwrite',s=>s.put(v,k)),kvDel=k=>txn('readwrite',s=>s.delete(k)),kvKeys=()=>txn('readonly',s=>s.getAllKeys());
+const fail=()=>{$('#idbmsg').textContent='⚠ Trình duyệt không cho lưu dữ liệu (IndexedDB bị chặn, ví dụ ở chế độ riêng tư).'};
+const save=()=>{clearTimeout(st);st=setTimeout(()=>kvSet('last',{cfg:readCfg(),blob:tplBlob}).catch(fail),400)};
+function setTpl(blob,auto){return new Promise(res=>{if(!blob){tpl=tplBlob=null;res();return}const im=new Image();
+ im.onload=()=>{tpl=im;tplBlob=blob;if(auto){const W=im.naturalWidth,H=im.naturalHeight,s=Math.round(Math.min(W,H)*.5);$('#bw').value=$('#bh').value=s;$('#bx').value=Math.round((W-s)/2);$('#by').value=Math.round(H*.08);
+  TX.forEach((t,i)=>{$('#t'+i+'_x').value=Math.round(W/2);$('#t'+i+'_y').value=Math.round(H*.08+s+20+i*H*.06);$('#t'+i+'_s').value=Math.max(12,Math.round(H*.035))})}res()};
+ im.onerror=()=>{alert('Không đọc được ảnh');res()};im.src=URL.createObjectURL(blob)})}
+async function refreshPresets(k){const ks=(await kvKeys()).filter(x=>x.startsWith('p:'));$('#pset').innerHTML='<option value="">— chọn mẫu đã lưu —</option>'+ks.map(x=>`<option value="${esc(x)}">${esc(x.slice(2))}</option>`).join('');if(k)$('#pset').value=k}
+$('#psave').onclick=async()=>{const c=$('#pset').value,name=prompt('Tên mẫu (ảnh khung + vị trí + font + văn bản):',c?c.slice(2):'');if(!name)return;try{await kvSet('p:'+name,{cfg:readCfg(),blob:tplBlob});await refreshPresets('p:'+name)}catch(e){fail()}};
+$('#pdel').onclick=async()=>{const k=$('#pset').value;if(!k||!confirm('Xóa mẫu "'+k.slice(2)+'"?'))return;try{await kvDel(k);await refreshPresets()}catch(e){fail()}};
+$('#pset').addEventListener('change',async()=>{const k=$('#pset').value;if(!k)return;try{const d=await kvGet(k);await setTpl(d.blob,false);applyCfg(d.cfg);pv();save()}catch(e){fail()}});
+$('#cfg').addEventListener('input',()=>{pv();save()});$('#svc').addEventListener('change',()=>{pv();save()});$('#rnd').onclick=pickRec;
+$('#tpl').addEventListener('change',async e=>{const f=e.target.files[0];if(f){await setTpl(f,true);pv();save()}});
+$('#tplx').onclick=()=>{tpl=tplBlob=null;$('#tpl').value='';$('#bx').value=60;$('#by').value=40;$('#bw').value=$('#bh').value=520;TX.forEach((t,i)=>{$('#t'+i+'_x').value=320;$('#t'+i+'_y').value=t[2];$('#t'+i+'_s').value=t[3]});pv();save()};
+/* ---------- Xử lý hàng loạt đa luồng (Web Worker) ---------- */
+$('#nw').value=Math.max(1,Math.min(navigator.hardwareConcurrency||4,8));
+function wk(){let tpl=null;onmessage=async e=>{const m=e.data;if(m.t==='tpl'){tpl=m.bmp;return}const out=[];
+ for(const it of m.items){try{const cv=new OffscreenCanvas(1,1);drawCore(cv,tpl,m.cfg,it.rec);const b=await cv.convertToBlob({type:'image/png'});out.push({i:it.i,data:new Uint8Array(await b.arrayBuffer())})}catch(err){out.push({i:it.i,err:err.message})}}
+ postMessage({id:m.id,out})}}
+function fakeW(){const w={postMessage:async m=>{if(m.t)return;const out=[],cv=document.createElement('canvas');
+ for(const it of m.items){try{drawCore(cv,tpl,m.cfg,it.rec);const b=await new Promise(r=>cv.toBlob(r,'image/png'));out.push({i:it.i,data:new Uint8Array(await b.arrayBuffer())})}catch(err){out.push({i:it.i,err:err.message})}}
+ setTimeout(()=>w.onmessage({data:{id:m.id,out}}),0)},terminate(){}};return w}
+function mkWorkers(n){if(typeof OffscreenCanvas==='undefined'||!window.Worker)return[fakeW()];
+ const s=$('#main').textContent,cut=(a,b)=>s.slice(s.indexOf(a),s.indexOf(b)),
+ code=cut('const norm=','/* ---------- ZIP writer')+cut('/* ---------- Tạo QR từ','/* ---------- Khung ảnh')+cut('/* ---------- Vẽ khung','/*END*/')+'\n('+wk+')();';
+ try{const url=URL.createObjectURL(new Blob([code],{type:'text/javascript'})),ws=[];for(let i=0;i<n;i++){const w=new Worker(url);w.real=1;ws.push(w)}return ws}catch(e){return[fakeW()]}}
+function runPool(ws,chunks,cfg,onRes){return new Promise(res=>{let next=0,active=0;
+ const feed=w=>{if(next>=chunks.length){if(!active)res();return}const m={id:next,items:chunks[next++],cfg};active++;w.job=m;w.postMessage(m)};
+ const wire=w=>{w.onmessage=e=>{active--;onRes(e.data.out);feed(w)};if(w.real)w.onerror=ev=>{ev.preventDefault();w.terminate();const f=fakeW();wire(f);f.job=w.job;f.postMessage(w.job)}};
+ ws.forEach(wire);ws.forEach(feed)})}
+function fileName(r,i){const V={stk:r.acc.replace(/\s/g,'').replace(/\.0+$/,''),ten:r.name,noidung:r.msg,sotien:parseAmount(r.amount)||'',bank:r.bank,bin:resolveBin(r.bank)||'',stt:i+1,dong:r.row};
+ let n=($('#nm').value||'{ten|stk}').replace(/\{([^{}]+)\}/g,(_,k)=>{for(const p of k.split('|')){const v=V[p.trim().toLowerCase()];if(v!==undefined&&String(v).trim()!=='')return String(v).trim()}return''});
+ if($('#nmd').checked)n=n.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D');return n}
+$('#nm').addEventListener('input',save);$('#nmq').addEventListener('change',()=>{if($('#nmq').value){$('#nm').value=$('#nmq').value;save()}});
+let outLinks=[];
+$('#go').onclick=async()=>{if(!files.length)return alert('Hãy tải lên ít nhất một file danh sách.');
+ const bad=files.find(f=>f.map.bank<0||f.map.acc<0);if(bad)return alert(`File "${bad.name}" chưa chọn cột Mã NH/BIN hoặc Số tài khoản.`);
+ $('#go').disabled=true;$('#dlall').disabled=true;$('#res').innerHTML='';outLinks=[];
+ const all=files.map(getRecords),total=all.reduce((a,b)=>a+b.length,0),te=new TextEncoder(),cfg=readCfg(),n=Math.max(1,Math.min(16,+$('#nw').value||1));let done=0,fails=0;
+ const upd=lbl=>{$('#pb').style.width=(total?done/total*100:100)+'%';$('#pt').textContent=`${done} / ${total} mã đã xử lý${fails?` (${fails} lỗi)`:''}${lbl?' · '+lbl:''}`};
+ const ws=mkWorkers(n);upd('khởi động '+ws.length+' luồng…');
+ if(tpl){const bmp=await createImageBitmap(tpl);ws.forEach(w=>w.real&&w.postMessage({t:'tpl',bmp}))}
+ for(let fi=0;fi<files.length;fi++){const f=files[fi],recs=all[fi],data=new Array(recs.length),errs=[],chunks=[];
+  for(let i=0;i<recs.length;i+=6)chunks.push(recs.slice(i,i+6).map((rec,j)=>({i:i+j,rec})));
+  await runPool(ws,chunks,cfg,out=>{for(const o of out){if(o.err){errs.push([recs[o.i].row,`Dòng ${recs[o.i].row}: ${o.err}`]);fails++}else data[o.i]=o.data;done++}upd(f.name)});
+  const entries=[],seen={};
+  recs.forEach((r,i)=>{if(!data[i])return;let base=fileName(r,i).replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').trim().slice(0,100)||('dong_'+r.row);const k=base.toLowerCase();seen[k]=(seen[k]||0)+1;if(seen[k]>1)base+='_'+seen[k];entries.push({name:base+'.png',data:data[i]})});
+  const nImg=entries.length;errs.sort((a,b)=>a[0]-b[0]);if(errs.length)entries.push({name:'_loi.txt',data:te.encode(errs.map(e=>e[1]).join('\n'))});
+  const zname=f.name.replace(/\.[^.]+$/,'')+'.zip',url=URL.createObjectURL(makeZip(entries));outLinks.push({zname,url});
+  $('#res').insertAdjacentHTML('beforeend',`<div class="res"><b>${esc(zname)}</b><span>${nImg} ảnh${errs.length?` · ${errs.length} dòng lỗi (xem _loi.txt)`:''}</span><a href="${url}" download="${esc(zname)}">⬇ Tải ZIP</a></div>`)}
+ ws.forEach(w=>w.terminate());upd('Hoàn tất ✔ ('+ws.length+' luồng)');$('#go').disabled=false;$('#dlall').disabled=!outLinks.length};
+$('#dlall').onclick=async()=>{for(const o of outLinks){const a=document.createElement('a');a.href=o.url;a.download=o.zname;document.body.append(a);a.click();a.remove();await new Promise(r=>setTimeout(r,400))}};
+(async()=>{try{await refreshPresets();const d=await kvGet('last');if(d){await setTpl(d.blob,false);applyCfg(d.cfg)}}catch(e){fail()}pv()})();
+</script></body></html>
